@@ -1,5 +1,6 @@
 import os
 import time
+import logging
 from langchain_openai import ChatOpenAI
 from langchain.prompts import ChatPromptTemplate
 from pydantic import BaseModel
@@ -9,9 +10,14 @@ from langchain_core.messages import AIMessage
 from openai import APIConnectionError
 
 from dexter.prompts import DEFAULT_SYSTEM_PROMPT
+from dexter.utils.api_security import get_openai_api_key, validate_all_required_keys
+from dexter.utils.rate_limiter import rate_limit
 
-# Initialize the OpenAI client
-# Make sure your OPENAI_API_KEY is set in your .env
+logger = logging.getLogger(__name__)
+
+# Initialize the OpenAI client with secure API key management
+# API keys are validated for security before use
+@rate_limit(api_type="openai", cost=0.02)  # OpenAI API calls cost more
 def call_llm(
     prompt: str,
     model: str = "gpt-4.1",
@@ -20,14 +26,19 @@ def call_llm(
     tools: Optional[List[BaseTool]] = None,
 ) -> AIMessage:
   final_system_prompt = system_prompt if system_prompt else DEFAULT_SYSTEM_PROMPT
-  
+
   prompt_template = ChatPromptTemplate.from_messages([
       ("system", final_system_prompt),
       ("user", "{prompt}")
   ])
 
-  # Initialize the LLM.
-  llm = ChatOpenAI(model=model, temperature=0, api_key=os.getenv("OPENAI_API_KEY"))
+  # Initialize the LLM with validated API key
+  try:
+      validated_api_key = get_openai_api_key()
+      llm = ChatOpenAI(model=model, temperature=0, api_key=validated_api_key)
+  except Exception as e:
+      logger.error(f"Failed to initialize OpenAI client: {e}")
+      raise
 
   # Add structured output or tools to the LLM.
   runnable = llm
