@@ -13,7 +13,7 @@ def call_api(endpoint: str, params: dict) -> dict:
     base_url = "https://api.financialdatasets.ai"
     url = f"{base_url}{endpoint}"
     headers = {"x-api-key": financial_datasets_api_key}
-    response = requests.get(url, params=params, headers=headers)
+    response = requests.get(url, params=params, headers=headers, timeout=(30, 60))
     response.raise_for_status()
     return response.json()
 

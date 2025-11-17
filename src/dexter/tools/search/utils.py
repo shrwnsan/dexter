@@ -5,7 +5,7 @@ from datetime import datetime
 
 def parse_rss_content(xml_content: str, max_results: int) -> List[SearchResult]:
   try:
-      from xml.etree import ElementTree as ET
+      from defusedxml import ElementTree as ET
       root = ET.fromstring(xml_content)
       results: List[SearchResult] = []
 
@@ -87,6 +87,7 @@ def _parse_date(date_str: str) -> datetime | None:
                         return datetime.strptime(date_part, fmt)
                     except ValueError:
                         continue
-            except Exception:
-                pass
+            except Exception:  # nosec B112
+                # Skip invalid date patterns and continue processing
+                continue
     return None 

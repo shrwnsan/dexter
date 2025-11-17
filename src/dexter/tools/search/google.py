@@ -18,7 +18,7 @@ def search_google_news(query: str, max_results: int = 5) -> list[SearchResult]:
     """
     search_url = f"https://news.google.com/rss/search?q={query.replace(' ', '%20')}&hl=en-US&gl=US&ceid=US:en"
 
-    response = requests.get(search_url)
+    response = requests.get(search_url, timeout=(30, 60))
     if response.status_code != 200:
         return []
     xml_content = response.text
